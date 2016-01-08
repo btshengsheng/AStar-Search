@@ -25,9 +25,10 @@ std::pair<std::vector<Ts>, bool> AStarSearch(
     Ts getstate() const {
       return s;
     }
-    Action_Iter getiter() const {
+    Action_Iter getaction() const {
       return a;
     }
+    Node geparent()
     bool isinitnode() const {
       return isinit;
     }
@@ -47,18 +48,18 @@ std::pair<std::vector<Ts>, bool> AStarSearch(
     Node const& currnode{*cit};
     if(currnode.getstate() == goal_state){
       std::vector<Ts> r{};
-      for(auto it{cit}; !it->isinitnode(); it = it->getiter())
-        r.push_back(it);
+      for(auto it{cit}; !it->isinitnode(); it = it->getparent())
+        r.push_back(it->getstate());
         return {r, true};
     }
     //expand
     bool expandsuccess{false};
-    for(auto it{model.equal_range(currnode)->first};
-        it != model.equal_range(currnode)->second; 
+    for(auto it{model.equal_range(currnode.getstate())->first};
+        it != model.equal_range(currnode.getstate())->second; 
         it++
     ){
       visited.insert(currnode);
-      if(visited.find(it->second) != visited.end()){
+      if(visited.find(Node{it->second.first, Tc{}}) != visited.end()){
         expandsuccess = true;
         Node nextnode{
           it->second.first, 
