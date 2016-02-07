@@ -51,28 +51,26 @@ std::pair<std::vector<Ts>, bool> AStarSearch(
   std::priority_queue<Node, std::vector<Node>, typename Node::costgreater> frontier{};
   std::set<Node, typename Node::compstate> visited{};
   frontier.push(Node{init_state, heuristic.at(init_state)});
-  
+
   while(true){
     if(frontier.empty())
-      return {std::vector<Ts>{}, false};
+      return std::pair<std::vector<Ts>, bool>{std::vector<Ts>{}, false};
       
     Node const current{frontier.top()};
     frontier.pop();
     //discard duplicates from frontier
     if(visited.find(current) != visited.end())
-      break;
+      continue;
     visited.insert(current);    
     //if current node is goal node, return
     if(current.state() == goal_state){
       std::vector<Ts> r{};
-      r.push_back(goal_state);
-      for(Ts parent_state{current.lastaction()->first}; 
-          parent_state != init_state; 
-          r.push_back(parent_state), 
-          parent_state = visited.find(Node{parent_state, Tc{}})->lastaction()->first)
-          ;
-      r.push_back(init_state);
-      return {r, true};
+      Node parent{current};
+      for(; !parent.isinitnode();
+          parent = *(visited.find(Node{parent.lastaction()->first, Tc{}})))
+        r.push_back(parent.state());
+      r.push_back(parent.state());
+      return std::pair<std::vector<Ts>, bool>{r, true};
     }
     //expansion
     for(Action_Iter action_iter{transition_model.equal_range(current.state()).first};
@@ -82,7 +80,7 @@ std::pair<std::vector<Ts>, bool> AStarSearch(
       Ts next_state = action_iter->second.first;
       Node next{next_state, 
                 action_iter->second.second - heuristic.at(current.state()) \
-                - current.esttotalcost() + heuristic.at(next_state),
+                + current.esttotalcost() + heuristic.at(next_state),
                 action_iter};      
       if(visited.find(next) == visited.end())
         frontier.push(next);
